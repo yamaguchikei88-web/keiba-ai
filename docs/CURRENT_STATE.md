@@ -10,4 +10,5 @@
 - Phase 2 registryは予測時刻・cutoff・入力snapshot・model/feature/experiment versionを保存できるが、既存APIには未接続である。
 - Phase 2実装は `e04d84b` でGitHub `main` に同期済み。`python -m unittest discover -s tests -v` は3件成功。
 - 複数PC準備として、artifact pathの環境変数化、非破壊`setup.bat`、README、共有storage方針を追加済み。実DB/model/外部設定は未変更。Python/registry/path testsは5件成功。
+- 複数PC準備は `be3348b` でGitHub `main` に同期済み。
 - 詳細: `docs/PHASE0_AUDIT_REPORT.md`、`docs/PHASE1_DATA_INVENTORY.md`、`docs/DATA_MODEL.md`。
