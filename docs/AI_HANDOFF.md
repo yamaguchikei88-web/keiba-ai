@@ -3,7 +3,7 @@
 ## 現在地
 
 - Phase: 1 実DB・モデル・データの読み取り専用inventory（完了）
-- 現在Task: Phase 1文書のdoc-only commit/push
+- 現在Task: Phase 1文書のdoc-only push
 - 次Task: 実artifactの場所と読取り専用アクセスを確認する追加inventoryの承認待ち。
 
 ## 完了した作業

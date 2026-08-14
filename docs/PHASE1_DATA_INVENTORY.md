@@ -1,7 +1,7 @@
 # Phase 1: 実DB・モデル・データ inventory（読み取り専用）
 
-調査日: 2026-08-14 JST  
-対象作業コピー: `C:\Users\yamag\OneDrive\ドキュメント\ChatGPT\競馬予想AI\keiba-ai-github`（`main`）  
+調査日: 2026-08-14 JST
+対象作業コピー: `C:\Users\yamag\OneDrive\ドキュメント\ChatGPT\競馬予想AI\keiba-ai-github`（`main`）
 実施範囲: ローカルの正しい作業コピーとその親プロジェクトフォルダ、コードが参照する既知のローカル外部パス。DB接続、スクレイパー、学習、API起動、外部サービス操作は行っていない。
 
 ## 結論
