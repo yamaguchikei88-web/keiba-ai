@@ -3,7 +3,7 @@
 ## 現在地
 
 - Phase: 2 予想履歴・モデル・実験管理基盤（完了）
-- 現在Task: Phase 2のcode/docs/test commit/push
+- 現在Task: Phase 2完了（GitHub同期済み）
 - 次Task: 実artifactの場所と読取り専用アクセスを確認し、承認後に既存APIへ安全にregistryを接続する設計を行う。
 
 ## 完了した作業
@@ -13,6 +13,7 @@
 - 空の無関係なローカルGit初期化フォルダとは別に、このGitHub作業コピーを安全にcloneした。
 - 正しい作業コピーと親プロジェクト範囲を探索し、SQLite/モデル/metadata/予測履歴が0件であることを確認した。既知のWindows Google Drive相当パスも存在しない。
 - `registry/store.py`に、明示実行のみのSQLite migration、feature/model/experiment/prediction/metrics registry、明示的production昇格を実装した。`tests/test_registry.py`の3テストは成功。
+- Phase 2実装commit: `e04d84b feat: add research registry foundation`（GitHub `main`へpush済み）。
 
 ## 変更範囲
 
