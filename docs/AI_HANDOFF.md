@@ -3,7 +3,7 @@
 ## 現在地
 
 - Phase: 2 予想履歴・モデル・実験管理基盤（完了）
-- 現在Task: 共有ストレージ設計（完了、GitHub同期待ち）
+- 現在Task: 共有ストレージ設計（完了、GitHub同期済み）
 - 次Task: Drive共有folder/manifest/単一writer規約の承認後、実artifactを読取り確認する。
 
 ## 完了した作業
@@ -18,6 +18,7 @@
 - `python -m py_compile`、notebook JSON検証、`python -m unittest discover -s tests -v`を実行し、unit testは5件成功。Node install/buildはlock file・依存未導入のため未実行。
 - 複数PC準備commit: `be3348b docs: prepare portable multi-PC development`（GitHub `main`へpush済み）。
 - Google Drive/GCS/Colab/Render/Vercelの参照と無料枠を調査し、`docs/SHARED_STORAGE_DESIGN.md`を追加。外部storageには接続していない。
+- 共有storage設計commit: `2435293 docs: define free shared storage design`（GitHub `main`へpush済み）。
 
 ## 変更範囲
 

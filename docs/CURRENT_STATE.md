@@ -12,4 +12,5 @@
 - 複数PC準備として、artifact pathの環境変数化、非破壊`setup.bat`、README、共有storage方針を追加済み。実DB/model/外部設定は未変更。Python/registry/path testsは5件成功。
 - 複数PC準備は `be3348b` でGitHub `main` に同期済み。
 - 共有storage設計を完了: 無料枠内の共有Google Drive + Colab単一writerを推奨。外部storageへの接続・実データ操作は未実施。
+- 設計書は `2435293` でGitHub `main` に同期済み。unit testは5件成功。
 - 詳細: `docs/PHASE0_AUDIT_REPORT.md`、`docs/PHASE1_DATA_INVENTORY.md`、`docs/DATA_MODEL.md`。
