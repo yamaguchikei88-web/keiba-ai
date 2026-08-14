@@ -1,5 +1,5 @@
 # CURRENT TASK
 
-状態: 完了（Phase 2: 予想履歴・モデル・実験管理基盤）
+状態: 完了（複数PC開発準備、GitHub同期待ち）
 
-`registry/store.py`へ明示実行型SQLite registry migration/APIを追加し、feature set、model、experiment、prediction run/entry、bet、metricを保存できるようにした。既存API/ML/scraperには未接続で、DB作成はテストの一時領域だけで行った。`tests/test_registry.py`は3件成功。実装は`e04d84b`でGitHub `main`に同期済み。次は実artifactへの読取り確認と、承認後の安全なAPI接続設計が必要。
+複数PCでclone後に再開できるよう、環境変数ベースのdata/model path、README、非破壊setup、Colab artifact共有方針を追加した。実DB/modelの取得・移動、学習、API/Render/Vercel変更はしていない。Python compile・notebook JSON・unit test（5件）は成功。未解決事項は共有Drive/GCSのURI/IAM/manifest、依存lock file、registryの既存API接続。次: code/docs-only commit/push。

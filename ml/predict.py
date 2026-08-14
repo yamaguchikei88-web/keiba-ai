@@ -15,15 +15,18 @@ import logging
 from pathlib import Path
 from datetime import datetime
 
+BASE_DIR = Path(__file__).parent.parent
 sys.path.append(str(Path(__file__).parent))
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+from project_paths import model_path
 from features import encode_features, FEATURE_COLS
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
-BASE_DIR = Path(__file__).parent.parent
-MODEL_PATH = BASE_DIR / "models" / "keiba_lgbm.pkl"
-STATS_CACHE_PATH = BASE_DIR / "models" / "stats_cache.pkl"
+MODEL_PATH = model_path("keiba_lgbm.pkl")
+STATS_CACHE_PATH = model_path("stats_cache.pkl")
 HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 
 RACECOURSE_NAME_TO_CODE = {

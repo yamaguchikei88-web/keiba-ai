@@ -15,6 +15,10 @@ import json
 import logging
 from datetime import datetime
 
+PROJECT_ROOT = Path(__file__).parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+from project_paths import DB_PATH, model_path
 from predict import predict_race, build_race_id, RACECOURSE_NAME_TO_CODE
 
 logging.basicConfig(level=logging.INFO)
@@ -29,7 +33,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-META_PATH = Path(__file__).parent.parent / "models" / "model_meta.json"
+META_PATH = model_path("model_meta.json")
 
 
 class PredictRequest(BaseModel):
@@ -96,8 +100,6 @@ def register_result(body: dict):
     body: { race_id, results: [{horse_num, finish_pos}] }
     """
     import sqlite3
-    from pathlib import Path
-    DB_PATH = Path(__file__).parent.parent / "data" / "keiba.db"
 
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()

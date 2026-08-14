@@ -4,6 +4,7 @@ LightGBMモデルを学習・保存するスクリプト
 """
 
 import sqlite3
+import sys
 import numpy as np
 import pandas as pd
 import lightgbm as lgb
@@ -14,16 +15,18 @@ from pathlib import Path
 from sklearn.metrics import roc_auc_score
 from datetime import datetime
 
+PROJECT_ROOT = Path(__file__).parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+from project_paths import DB_PATH, MODEL_DIR, model_path
 from features import prepare_dataset, FEATURE_COLS, load_raw_data
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
-DB_PATH = Path(__file__).parent.parent / "data" / "keiba.db"
-MODEL_DIR = Path(__file__).parent.parent / "models"
-MODEL_PATH = MODEL_DIR / "keiba_lgbm.pkl"
-STATS_CACHE_PATH = MODEL_DIR / "stats_cache.pkl"
-META_PATH = MODEL_DIR / "model_meta.json"
+MODEL_PATH = model_path("keiba_lgbm.pkl")
+STATS_CACHE_PATH = model_path("stats_cache.pkl")
+META_PATH = model_path("model_meta.json")
 
 LGB_PARAMS = {
     "objective": "binary",

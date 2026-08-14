@@ -13,9 +13,11 @@ import os
 from google.colab import drive
 drive.mount('/content/drive')
 
-# 保存先フォルダを作成
-os.makedirs('/content/drive/MyDrive/keiba-ai/data', exist_ok=True)
-os.makedirs('/content/drive/MyDrive/keiba-ai/models', exist_ok=True)
+# Shared Drive / Cloud Storage mount path. Change this variable for a shared
+# location; do not use a PC-local path or copy artifacts into Git.
+SHARED_ROOT = os.environ.get('KEIBA_SHARED_ROOT', '/content/drive/MyDrive/keiba-ai')
+os.makedirs(f'{SHARED_ROOT}/data', exist_ok=True)
+os.makedirs(f'{SHARED_ROOT}/models', exist_ok=True)
 print('セットアップ完了')
 """
 
@@ -44,7 +46,8 @@ from pathlib import Path
 
 # scraper の DB_PATH を Drive に向ける
 import netkeiba_scraper as scraper
-scraper.DB_PATH = Path('/content/drive/MyDrive/keiba-ai/data/keiba.db')
+shared_root = Path(os.environ.get('KEIBA_SHARED_ROOT', '/content/drive/MyDrive/keiba-ai'))
+scraper.DB_PATH = shared_root / 'data' / 'keiba.db'
 scraper.init_db()
 
 # 収集開始（1年ずつ実行してもOK）
@@ -61,7 +64,8 @@ sys.path.append('/content/keiba-ai/scraper')
 import horse_scraper as hs
 from pathlib import Path
 
-hs.DB_PATH = Path('/content/drive/MyDrive/keiba-ai/data/keiba.db')
+shared_root = Path(os.environ.get('KEIBA_SHARED_ROOT', '/content/drive/MyDrive/keiba-ai'))
+hs.DB_PATH = shared_root / 'data' / 'keiba.db'
 hs.fill_pedigree()
 print('血統データ補完完了')
 """
@@ -76,11 +80,12 @@ from pathlib import Path
 
 # パスを Drive に向ける
 import features
-features.DB_PATH = Path('/content/drive/MyDrive/keiba-ai/data/keiba.db')
+shared_root = Path(os.environ.get('KEIBA_SHARED_ROOT', '/content/drive/MyDrive/keiba-ai'))
+features.DB_PATH = shared_root / 'data' / 'keiba.db'
 
 import train as trainer
-trainer.DB_PATH = Path('/content/drive/MyDrive/keiba-ai/data/keiba.db')
-trainer.MODEL_DIR = Path('/content/drive/MyDrive/keiba-ai/models')
+trainer.DB_PATH = shared_root / 'data' / 'keiba.db'
+trainer.MODEL_DIR = shared_root / 'models'
 trainer.MODEL_PATH = trainer.MODEL_DIR / 'keiba_lgbm.pkl'
 trainer.STATS_CACHE_PATH = trainer.MODEL_DIR / 'stats_cache.pkl'
 trainer.META_PATH = trainer.MODEL_DIR / 'model_meta.json'
@@ -90,34 +95,17 @@ print(f'学習完了！ AUC: {auc:.4f}')
 """
 
 # ============================================================
-# セル6: モデルをGitHubにアップロード
+# セル6: artifactを共有storageに残し、Gitへは文書だけをcommit
 # ============================================================
 CELL_6 = """
-import shutil
 from pathlib import Path
+import json
 
-# DriveからリポジトリのmodelsフォルダにコピーS
-src = Path('/content/drive/MyDrive/keiba-ai/models')
-dst = Path('/content/keiba-ai/models')
-dst.mkdir(exist_ok=True)
-
-for f in ['keiba_lgbm.pkl', 'stats_cache.pkl', 'model_meta.json']:
-    if (src / f).exists():
-        shutil.copy(src / f, dst / f)
-        print(f'コピー: {f}')
-
-# GitHubにプッシュ
-# ※ 事前にGitHubのPersonal Access Tokenを取得してください
-GITHUB_TOKEN = 'ここにGitHub Personal Access Tokenを入力'
-GITHUB_USER = 'yamaguchikei88-web'
-
-!cd /content/keiba-ai && git config user.email "your@email.com"
-!cd /content/keiba-ai && git config user.name "keiba-ai"
-!cd /content/keiba-ai && git add models/
-!cd /content/keiba-ai && git commit -m "Update trained model"
-!cd /content/keiba-ai && git push https://{GITHUB_USER}:{GITHUB_TOKEN}@github.com/{GITHUB_USER}/keiba-ai.git main
-
-print('GitHubへのアップロード完了！')
+shared_root = Path(os.environ.get('KEIBA_SHARED_ROOT', '/content/drive/MyDrive/keiba-ai'))
+model_dir = shared_root / 'models'
+print('モデルartifactは共有storageに保持します:', model_dir)
+print('GitHubへmodel/cacheをコピー・pushしません。')
+print('承認済みのmodel registry記録とartifact hashを別taskで作成してください。')
 """
 
 if __name__ == "__main__":

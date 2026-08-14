@@ -1,10 +1,14 @@
 data/raw/
 data/processed/
 data/*.db
+models/
+artifacts/
 __pycache__/
 *.pyc
 .env
 .env.local
+.env.*
+!.env.example
 node_modules/
 .next/
 *.egg-info/

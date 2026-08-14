@@ -4,11 +4,15 @@ MLモデル用の特徴量エンジニアリング
 """
 
 import sqlite3
+import sys
 import pandas as pd
 import numpy as np
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent.parent / "data" / "keiba.db"
+PROJECT_ROOT = Path(__file__).parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+from project_paths import DB_PATH
 
 # 馬場状態の数値化
 TRACK_COND_MAP = {"良": 0, "稍重": 1, "重": 2, "不良": 3}

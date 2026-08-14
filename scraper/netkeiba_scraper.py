@@ -10,13 +10,17 @@ import sqlite3
 import time
 import re
 import logging
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
-DB_PATH = Path(__file__).parent.parent / "data" / "keiba.db"
+PROJECT_ROOT = Path(__file__).parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+from project_paths import DB_PATH
 BASE_URL = "https://db.netkeiba.com"
 
 HEADERS = {

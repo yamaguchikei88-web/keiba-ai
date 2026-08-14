@@ -3,8 +3,8 @@
 ## 現在地
 
 - Phase: 2 予想履歴・モデル・実験管理基盤（完了）
-- 現在Task: Phase 2完了（GitHub同期済み）
-- 次Task: 実artifactの場所と読取り専用アクセスを確認し、承認後に既存APIへ安全にregistryを接続する設計を行う。
+- 現在Task: 複数PC開発準備（完了、GitHub同期待ち）
+- 次Task: 共有storageの提供後、実artifactを読取り確認し、承認後に既存APIへ安全にregistryを接続する設計を行う。
 
 ## 完了した作業
 
@@ -14,6 +14,8 @@
 - 正しい作業コピーと親プロジェクト範囲を探索し、SQLite/モデル/metadata/予測履歴が0件であることを確認した。既知のWindows Google Drive相当パスも存在しない。
 - `registry/store.py`に、明示実行のみのSQLite migration、feature/model/experiment/prediction/metrics registry、明示的production昇格を実装した。`tests/test_registry.py`の3テストは成功。
 - Phase 2実装commit: `e04d84b feat: add research registry foundation`（GitHub `main`へpush済み）。
+- PC固有pathを避ける`project_paths.py`、root `.env.example`、README、共有storage方針を追加中。既存API/MLの読み書き動作は変更せず、保存先だけ環境変数で選べるようにする。
+- `python -m py_compile`、notebook JSON検証、`python -m unittest discover -s tests -v`を実行し、unit testは5件成功。Node install/buildはlock file・依存未導入のため未実行。
 
 ## 変更範囲
 
@@ -33,4 +35,4 @@
 - 既存モデルを基準モデルとして凍結する方法。
 - prediction/model/experiment台帳の保存先。
 
-未実装: registryを既存API/DBに接続するmigration、prediction/result入力の記録、as-of特徴量、backtest、評価計算、既存の自動再学習停止。次は実artifactを読取り確認し、互換性・バックアップ・手動承認を含む別taskとして接続を設計する。`/result/register`を今回変更していない点に注意。
+未実装: registryを既存API/DBに接続するmigration、prediction/result入力の記録、as-of特徴量、backtest、評価計算、既存の自動再学習停止。共有Drive/GCSのURI/IAM/manifestとPython/Node依存lock fileも未決定。`/result/register`を今回変更していない点に注意。
