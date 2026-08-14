@@ -2,9 +2,9 @@
 
 ## 現在地
 
-- Phase: 1 実DB・モデル・データの読み取り専用inventory（完了）
-- 現在Task: Phase 1文書のdoc-only push
-- 次Task: 実artifactの場所と読取り専用アクセスを確認する追加inventoryの承認待ち。
+- Phase: 2 予想履歴・モデル・実験管理基盤（完了）
+- 現在Task: Phase 2のcode/docs/test commit/push
+- 次Task: 実artifactの場所と読取り専用アクセスを確認し、承認後に既存APIへ安全にregistryを接続する設計を行う。
 
 ## 完了した作業
 
@@ -12,11 +12,12 @@
 - 監査レポート、計画、状態、アーキテクチャ、引継ぎ文書を作成。
 - 空の無関係なローカルGit初期化フォルダとは別に、このGitHub作業コピーを安全にcloneした。
 - 正しい作業コピーと親プロジェクト範囲を探索し、SQLite/モデル/metadata/予測履歴が0件であることを確認した。既知のWindows Google Drive相当パスも存在しない。
+- `registry/store.py`に、明示実行のみのSQLite migration、feature/model/experiment/prediction/metrics registry、明示的production昇格を実装した。`tests/test_registry.py`の3テストは成功。
 
 ## 変更範囲
 
-- 変更対象: `docs/MASTER_PLAN.md`、`docs/CURRENT_STATE.md`、`docs/ARCHITECTURE.md`、本ファイル、`docs/PHASE0_AUDIT_REPORT.md`、`tasks/CURRENT_TASK.md` のみ。
-- 変更していないもの: 既存コード、DB schema、データ、モデル、デプロイ設定、外部サービス。
+- 変更対象: `registry/`、`tests/test_registry.py`、Phase 2文書、状態/引継ぎ文書。
+- 変更していないもの: `api/`、`ml/`、`scraper/`、`frontend/`、既存DB schema、データ、モデル、デプロイ設定、外部サービス。
 
 ## 発見した問題
 
@@ -31,4 +32,4 @@
 - 既存モデルを基準モデルとして凍結する方法。
 - prediction/model/experiment台帳の保存先。
 
-実DBを入手または読取り専用でマウントできた場合、次はDBを変更せずにhash、`PRAGMA`、schema、件数、日付範囲、NULL率、重複を取得する。自動再学習停止、schema変更、モデル変更は別task・承認後に行う。
+未実装: registryを既存API/DBに接続するmigration、prediction/result入力の記録、as-of特徴量、backtest、評価計算、既存の自動再学習停止。次は実artifactを読取り確認し、互換性・バックアップ・手動承認を含む別taskとして接続を設計する。`/result/register`を今回変更していない点に注意。

@@ -1,5 +1,5 @@
 # CURRENT TASK
 
-状態: 完了（Phase 1: ローカル読み取り専用inventory）
+状態: 完了（Phase 2: 予想履歴・モデル・実験管理基盤）
 
-正しいGitHub作業コピーと親プロジェクト範囲を読み取り探索した。実SQLite DB、学習済みモデル、統計cache、metadata、予測履歴、実験ログは存在しなかった。DB接続、学習、スクレイパー、API、外部サービス操作はしていない。詳細は`docs/PHASE1_DATA_INVENTORY.md`。次は実artifactへの読取り専用アクセス確認が必要。
+`registry/store.py`へ明示実行型SQLite registry migration/APIを追加し、feature set、model、experiment、prediction run/entry、bet、metricを保存できるようにした。既存API/ML/scraperには未接続で、DB作成はテストの一時領域だけで行った。`tests/test_registry.py`は3件成功。次は実artifactへの読取り確認と、承認後の安全なAPI接続設計が必要。
