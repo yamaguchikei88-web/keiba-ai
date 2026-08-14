@@ -1,5 +1,5 @@
 # CURRENT TASK
 
-状態: 完了（GitHub同期）
+状態: 完了（Phase 1: ローカル読み取り専用inventory）
 
-Phase 0「現状監査」の成果文書を、正しいGitHub作業コピーの`main`へdoc-onlyで反映する作業を完了した。Phase 1の実DB・モデルinventoryは開始していない。既存コード、DB、データ、モデル、デプロイ設定は変更していない。
+正しいGitHub作業コピーと親プロジェクト範囲を読み取り探索した。実SQLite DB、学習済みモデル、統計cache、metadata、予測履歴、実験ログは存在しなかった。DB接続、学習、スクレイパー、API、外部サービス操作はしていない。詳細は`docs/PHASE1_DATA_INVENTORY.md`。次は実artifactへの読取り専用アクセス確認が必要。

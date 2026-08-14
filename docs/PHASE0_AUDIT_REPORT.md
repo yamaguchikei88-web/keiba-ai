@@ -35,7 +35,7 @@ SQLite `data/keiba.db`。`races`（PK `race_id`）、`race_results`（PK `id`、
 
 LightGBM GBDT二値分類、targetは`finish_pos == 1`。主な設定は`num_leaves=127`、`learning_rate=0.05`、最大5000 rounds、early stopping 100。joblibでモデル/統計キャッシュ、JSONで学習時刻・AUC・行数・特徴量一覧を保存する設計だがartifact実体と実測AUCは未確認。
 
-31特徴量は、レース条件、枠/馬番、年齢/性別/馬体重、odds/popularity、馬の過去成績、騎手/調教師成績、父の重馬場成績、父/母父/競馬場のカテゴリコード、脚質、月、曜日。
+30特徴量は、レース条件、枠/馬番、年齢/性別/馬体重、odds/popularity、馬の過去成績、騎手/調教師成績、父の重馬場成績、父/母父/競馬場のカテゴリコード、脚質、月、曜日。
 
 ## 8. 予想保存・バックテスト・評価
 
