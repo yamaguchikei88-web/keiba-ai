@@ -3,6 +3,7 @@ MLモデル用の特徴量エンジニアリング
 レースデータ → モデルが学習できる数値特徴量に変換する
 """
 
+import hashlib
 import sqlite3
 import sys
 import pandas as pd
@@ -14,12 +15,25 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 from project_paths import DB_PATH
 
-# 馬場状態の数値化
+# カテゴリ変数の固定マッピング（学習・推論で共通、追加・変更禁止）
 TRACK_COND_MAP = {"良": 0, "稍重": 1, "重": 2, "不良": 3}
 WEATHER_MAP = {"晴": 0, "曇": 1, "小雨": 2, "雨": 3, "小雪": 4, "雪": 5}
 SURFACE_MAP = {"芝": 0, "ダ": 1}
 DIRECTION_MAP = {"右": 0, "左": 1, "": 2}
 SEX_MAP = {"牡": 0, "牝": 1, "セ": 2}
+RACECOURSE_ENC_MAP = {
+    "札幌": 0, "函館": 1, "福島": 2, "新潟": 3, "東京": 4,
+    "中山": 5, "中京": 6, "京都": 7, "阪神": 8, "小倉": 9,
+}
+
+
+def _stable_hash(s: str, n_buckets: int = 500) -> int:
+    """文字列を安定したハッシュ値に変換する。
+    Python の組み込み hash() はセッション間で値が変わるため使用禁止。
+    同じ入力文字列は常に同じ整数 [0, n_buckets) を返す。"""
+    if not s:
+        return -1
+    return int(hashlib.md5(s.encode("utf-8")).hexdigest(), 16) % n_buckets
 
 
 def load_raw_data(conn: sqlite3.Connection) -> pd.DataFrame:
@@ -136,7 +150,9 @@ def build_horse_stats(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def encode_features(df: pd.DataFrame) -> pd.DataFrame:
-    """カテゴリ変数を数値化"""
+    """カテゴリ変数を数値化する。
+    全エンコードは固定マップまたは安定ハッシュを使用し、
+    DataFrame内容やサイズに依存しない（学習・推論で同一の変換を保証）。"""
     df = df.copy()
     df["track_condition_enc"] = df["track_condition"].map(TRACK_COND_MAP).fillna(-1)
     df["weather_enc"] = df["weather"].map(WEATHER_MAP).fillna(-1)
@@ -144,9 +160,18 @@ def encode_features(df: pd.DataFrame) -> pd.DataFrame:
     df["direction_enc"] = df["direction"].map(DIRECTION_MAP).fillna(2)
     df["sex_enc"] = df["sex"].map(SEX_MAP).fillna(-1)
 
-    # 血統を数値IDにエンコード（Label Encoding）
-    for col in ["father", "maternal_father", "racecourse"]:
-        df[col + "_enc"] = df[col].astype("category").cat.codes
+    # 競馬場は固定マップ（10場のみ）
+    df["racecourse_enc"] = df["racecourse"].map(RACECOURSE_ENC_MAP).fillna(-1)
+
+    # 父・母父は安定ハッシュ（cat.codes はDataFrame内容に依存するため使用禁止）
+    def _enc(col_name: str) -> pd.Series:
+        col = df.get(col_name)
+        if col is None:
+            return pd.Series(-1, index=df.index, dtype="int64")
+        return col.apply(lambda x: _stable_hash(str(x)) if pd.notna(x) and str(x) else -1)
+
+    df["father_enc"] = _enc("father")
+    df["maternal_father_enc"] = _enc("maternal_father")
 
     # 月・曜日
     df["month"] = df["date"].dt.month
@@ -156,20 +181,28 @@ def encode_features(df: pd.DataFrame) -> pd.DataFrame:
 
 
 FEATURE_COLS = [
+    # レース条件
     "distance", "surface_enc", "direction_enc", "track_condition_enc", "weather_enc",
+    # 出走情報
     "num_horses", "gate_num", "horse_num", "age", "sex_enc", "weight",
-    "odds", "popularity",
+    # 過去成績: 馬
     "horse_race_count", "horse_win_rate", "horse_top3_rate", "horse_avg_finish",
     "horse_dist_win_rate", "horse_cond_win_rate", "horse_recent_avg",
+    # 過去成績: 騎手・調教師
     "jockey_win_rate", "jockey_top3_rate",
     "trainer_win_rate",
+    # 血統適性
     "father_heavy_win_rate",
+    # カテゴリエンコード
     "father_enc", "maternal_father_enc", "racecourse_enc",
+    # 時系列
     "running_style", "month", "dayofweek",
+    # odds / popularity は学習時に値が存在するが推論時は不明のため除外
+    # 将来: リアルタイムオッズ取得が可能になれば追加を検討
 ]
 
 
-def prepare_dataset() -> tuple[pd.DataFrame, pd.Series]:
+def prepare_dataset() -> tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
     """学習用データセットを作成"""
     conn = sqlite3.connect(DB_PATH)
     raw = load_raw_data(conn)

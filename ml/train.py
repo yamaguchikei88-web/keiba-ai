@@ -48,11 +48,21 @@ N_ROUNDS = 5000
 EARLY_STOPPING = 100
 
 
-def build_stats_cache(df: pd.DataFrame) -> dict:
+def build_stats_cache(df: pd.DataFrame, cutoff_date=None) -> dict:
     """
     予測時にDBなしで使えるよう、馬・騎手・調教師・血統の統計を事前計算してキャッシュする
+
+    cutoff_date: この日付以前のデータのみ使用（None = 全データ）。
+                 学習時は training_cutoff_date を渡してval/未来データを除外する。
+                 Phase 4 バックテストでも任意の日付を指定して再現性を確保する。
     """
-    logger.info("統計キャッシュを構築中...")
+    if cutoff_date is not None:
+        df = df[df["date"] <= pd.Timestamp(cutoff_date)]
+    logger.info(
+        f"統計キャッシュを構築中... "
+        f"(cutoff={cutoff_date if cutoff_date is not None else '制限なし'}, "
+        f"レース数={df['race_id'].nunique() if 'race_id' in df.columns else '?'})"
+    )
 
     df = df.copy()
     df["is_win"] = (df["finish_pos"] == 1).astype(int)
@@ -120,9 +130,14 @@ def train():
     logger.info("データセット準備中...")
     X, y, full = prepare_dataset()
 
+    # 時系列順で80/20分割（data leakを防ぐため必ずchronological split）
     split_idx = int(len(X) * 0.8)
     X_train, X_val = X.iloc[:split_idx], X.iloc[split_idx:]
     y_train, y_val = y.iloc[:split_idx], y.iloc[split_idx:]
+
+    # 学習データの最終日（統計キャッシュのcutoffとして使用）
+    training_cutoff_date = full.iloc[:split_idx]["date"].max()
+    logger.info(f"学習データ期間: 〜{training_cutoff_date.date()} / 検証データ: {full.iloc[split_idx]['date'].date()}〜")
 
     train_data = lgb.Dataset(X_train, label=y_train, feature_name=FEATURE_COLS)
     val_data = lgb.Dataset(X_val, label=y_val, reference=train_data)
@@ -159,10 +174,12 @@ def train():
     logger.info(f"モデル保存: {MODEL_PATH}")
 
     # 統計キャッシュを構築・保存（予測サーバーがDBなしで使う）
+    # cutoff_date = training_cutoff_date: valデータ以降の成績をキャッシュから除外し
+    # 「学習時点で知り得た情報のみ」を反映する。Phase 4 バックテストでも同様に利用する。
     conn = sqlite3.connect(DB_PATH)
     raw_df = load_raw_data(conn)
     conn.close()
-    stats_cache = build_stats_cache(raw_df)
+    stats_cache = build_stats_cache(raw_df, cutoff_date=training_cutoff_date)
     joblib.dump(stats_cache, STATS_CACHE_PATH)
     logger.info(f"統計キャッシュ保存: {STATS_CACHE_PATH}")
 
@@ -172,6 +189,7 @@ def train():
         "val_auc": round(auc, 4),
         "train_rows": len(X_train),
         "val_rows": len(X_val),
+        "training_cutoff_date": training_cutoff_date.strftime("%Y-%m-%d"),
         "feature_cols": FEATURE_COLS,
     }
     META_PATH.write_text(json.dumps(meta, ensure_ascii=False, indent=2))

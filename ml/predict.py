@@ -184,8 +184,9 @@ def predict_race(race_id: str) -> dict:
             **h,
             **stat_feats,
             "date": pd.Timestamp(today),
-            "odds": None,
-            "popularity": None,
+            # odds / popularity は FEATURE_COLS から除外済み（レース前は不明）
+            # maternal_father は出馬表から取得不可のためデフォルト値
+            "maternal_father": "",
             "month": today.month,
             "dayofweek": today.weekday(),
         }
