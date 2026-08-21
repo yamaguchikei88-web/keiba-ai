@@ -3,13 +3,21 @@ data/processed/
 data/*.db
 models/
 artifacts/
+logs/
+backups/
 __pycache__/
+**/__pycache__/
 *.pyc
 .env
 .env.local
 .env.*
 !.env.example
+# production_version.txt は models/ に含まれるが、カスタムパス指定時も除外
+production_version.txt
+production_version.txt.tmp
 node_modules/
 .next/
 *.egg-info/
 .DS_Store
+.venv/
+venv/

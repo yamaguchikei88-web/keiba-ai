@@ -19,7 +19,7 @@ BASE_DIR = Path(__file__).parent.parent
 sys.path.append(str(Path(__file__).parent))
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
-from project_paths import model_path
+from project_paths import model_path, PRODUCTION_VERSION_PATH
 from features import encode_features, FEATURE_COLS
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -37,16 +37,114 @@ RACECOURSE_NAME_TO_CODE = {
 
 _model = None
 _stats = None
+_cache_version = None  # 現在キャッシュ済みのモデルに対応する production_version.txt の内容
+
+# バージョン文字列の許可パターン（英数字・ハイフン・アンダースコア、先頭は英数字、最大64文字）
+_VERSION_RE = re.compile(r'^[A-Za-z0-9][A-Za-z0-9_\-]{0,63}$')
+
+
+def _get_effective_version() -> str:
+    """production_version.txt から本番採用バージョンを読む。
+
+    MODEL_VERSION 環境変数は ml/train.py 専用。predict.py は一切参照しない。
+    本番モデルの切り替えは production_version.txt の更新のみで行う。
+    ファイルが存在しない・空の場合は RuntimeError を送出する（安全側に倒す）。
+    """
+    if not PRODUCTION_VERSION_PATH.exists():
+        raise RuntimeError(
+            f"本番モデルが未設定です。production_version.txt が見つかりません:\n"
+            f"  {PRODUCTION_VERSION_PATH}\n"
+            f"設定するには: echo 'v202609' > {PRODUCTION_VERSION_PATH}"
+        )
+    version = PRODUCTION_VERSION_PATH.read_text(encoding="utf-8").strip()
+    if not version:
+        raise RuntimeError(
+            f"production_version.txt が空です: {PRODUCTION_VERSION_PATH}\n"
+            "有効なバージョン文字列（例: v202609）を書き込んでください。"
+        )
+    return version
+
+
+def _resolve_load_paths() -> tuple[Path, Path]:
+    """Return (model_pkl, stats_pkl). model + stats + meta の 3 ファイルが揃っているか検証する。
+
+    1 ファイルでも欠けている場合は本番採用を拒否して FileNotFoundError を送出する。
+    """
+    version = _get_effective_version()
+    mp = model_path(f"keiba_lgbm_{version}.pkl")
+    sp = model_path(f"stats_cache_{version}.pkl")
+    mep = model_path(f"model_meta_{version}.json")
+    missing = [p for p in (mp, sp, mep) if not p.exists()]
+    if missing:
+        raise FileNotFoundError(
+            f"バージョン {version!r} のモデルファイルが不完全です（本番採用を拒否）:\n"
+            + "\n".join(f"  {p}" for p in missing)
+        )
+    return mp, sp
+
+
+def reload_model() -> None:
+    """モデルキャッシュをクリアして次回 load_model() 時に強制再読み込みさせる。
+
+    production_version.txt を更新後、または新モデルのデプロイ後に呼び出す。
+    """
+    global _model, _stats, _cache_version
+    _model = None
+    _stats = None
+    _cache_version = None
+
+
+def set_production_version(version: str) -> None:
+    """production_version.txt をアトミックに更新して本番モデルを切り替える。
+
+    手順:
+    1. バージョン文字列の形式を検証する
+    2. モデル 3 ファイル（pkl + stats + meta）の存在を確認する
+    3. .tmp ファイルに書き込んでからアトミックにリネームする
+       （POSIX では真のアトミック操作、Windows では best-effort）
+
+    ロールバック例:
+        set_production_version("v202608")  # 旧バージョンへ切り替え
+    """
+    if not _VERSION_RE.match(version):
+        raise ValueError(
+            f"不正なバージョン文字列: {version!r}\n"
+            "使用可能: 英数字・ハイフン・アンダースコア（先頭は英数字、最大64文字）"
+        )
+    mp = model_path(f"keiba_lgbm_{version}.pkl")
+    sp = model_path(f"stats_cache_{version}.pkl")
+    mep = model_path(f"model_meta_{version}.json")
+    missing = [p for p in (mp, sp, mep) if not p.exists()]
+    if missing:
+        raise FileNotFoundError(
+            f"バージョン {version!r} のモデルファイルが存在しません（切り替えを拒否）:\n"
+            + "\n".join(f"  {p}" for p in missing)
+        )
+    PRODUCTION_VERSION_PATH.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = PRODUCTION_VERSION_PATH.with_name("production_version.txt.tmp")
+    tmp_path.write_text(version.strip() + "\n", encoding="utf-8")
+    tmp_path.replace(PRODUCTION_VERSION_PATH)  # POSIX: atomic; Windows: best-effort
+    logger.info(f"production_version.txt を {version!r} に更新しました (atomic rename)")
 
 
 def load_model():
-    global _model, _stats
+    global _model, _stats, _cache_version
+    current_version = _get_effective_version()
+    # 有効バージョンが変わった場合はキャッシュを無効化して再ロード
+    # （production_version.txt の更新も自動検出する）
+    if _model is not None and _cache_version != current_version:
+        logger.info(
+            f"有効バージョン変更を検出 ({_cache_version!r} → {current_version!r}): "
+            f"キャッシュを再読み込みします"
+        )
+        _model = None
+        _stats = None
     if _model is None:
-        _model = joblib.load(MODEL_PATH)
-        logger.info("モデル読み込み完了")
-    if _stats is None:
-        _stats = joblib.load(STATS_CACHE_PATH)
-        logger.info("統計キャッシュ読み込み完了")
+        mp, sp = _resolve_load_paths()
+        _model = joblib.load(mp)
+        _stats = joblib.load(sp)
+        _cache_version = current_version
+        logger.info(f"モデル読み込み完了 (version={current_version or 'default'})")
     return _model, _stats
 
 

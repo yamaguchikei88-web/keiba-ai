@@ -23,6 +23,10 @@ DATA_DIR = _path_from_env("KEIBA_DATA_DIR", PROJECT_ROOT / "data")
 MODEL_DIR = _path_from_env("KEIBA_MODEL_DIR", PROJECT_ROOT / "models")
 DB_PATH = _path_from_env("KEIBA_DB_PATH", DATA_DIR / "keiba.db")
 REGISTRY_DB_PATH = _path_from_env("KEIBA_REGISTRY_DB_PATH", DATA_DIR / "research_registry.db")
+FAILED_LOG_PATH = _path_from_env("KEIBA_FAILED_LOG_PATH", DATA_DIR / "failed_races.jsonl")
+PRODUCTION_VERSION_PATH = _path_from_env(
+    "KEIBA_PRODUCTION_VERSION_PATH", MODEL_DIR / "production_version.txt"
+)
 
 
 def model_path(filename: str) -> Path:

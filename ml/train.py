@@ -3,6 +3,7 @@ LightGBMモデルを学習・保存するスクリプト
 学習済みモデル + 馬・騎手・調教師の統計キャッシュを保存する
 """
 
+import os
 import sqlite3
 import sys
 import numpy as np
@@ -27,6 +28,21 @@ logger = logging.getLogger(__name__)
 MODEL_PATH = model_path("keiba_lgbm.pkl")
 STATS_CACHE_PATH = model_path("stats_cache.pkl")
 META_PATH = model_path("model_meta.json")
+
+
+def _resolve_model_paths(version: str = "") -> tuple[Path, Path, Path]:
+    """Return (model_pkl, stats_pkl, meta_json) for the given version string.
+
+    If version is empty, returns the default fixed paths (backward compatible).
+    Versioned files are saved under MODEL_DIR alongside the defaults.
+    """
+    if version:
+        return (
+            model_path(f"keiba_lgbm_{version}.pkl"),
+            model_path(f"stats_cache_{version}.pkl"),
+            model_path(f"model_meta_{version}.json"),
+        )
+    return (MODEL_PATH, STATS_CACHE_PATH, META_PATH)
 
 LGB_PARAMS = {
     "objective": "binary",
@@ -169,9 +185,12 @@ def train():
     }).sort_values("importance", ascending=False)
     logger.info(f"\n特徴量重要度（上位10）:\n{importance.head(10).to_string(index=False)}")
 
+    version = os.environ.get("MODEL_VERSION", "")
+    ver_model_path, ver_stats_path, ver_meta_path = _resolve_model_paths(version)
+
     MODEL_DIR.mkdir(exist_ok=True)
-    joblib.dump(model, MODEL_PATH)
-    logger.info(f"モデル保存: {MODEL_PATH}")
+    joblib.dump(model, ver_model_path)
+    logger.info(f"モデル保存: {ver_model_path}")
 
     # 統計キャッシュを構築・保存（予測サーバーがDBなしで使う）
     # cutoff_date = training_cutoff_date: valデータ以降の成績をキャッシュから除外し
@@ -180,8 +199,8 @@ def train():
     raw_df = load_raw_data(conn)
     conn.close()
     stats_cache = build_stats_cache(raw_df, cutoff_date=training_cutoff_date)
-    joblib.dump(stats_cache, STATS_CACHE_PATH)
-    logger.info(f"統計キャッシュ保存: {STATS_CACHE_PATH}")
+    joblib.dump(stats_cache, ver_stats_path)
+    logger.info(f"統計キャッシュ保存: {ver_stats_path}")
 
     meta = {
         "trained_at": datetime.now().isoformat(),
@@ -192,8 +211,14 @@ def train():
         "training_cutoff_date": training_cutoff_date.strftime("%Y-%m-%d"),
         "feature_cols": FEATURE_COLS,
     }
-    META_PATH.write_text(json.dumps(meta, ensure_ascii=False, indent=2))
+    ver_meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2))
     logger.info(f"学習完了 | AUC: {auc:.4f} | Best iteration: {model.best_iteration}")
+    if version:
+        logger.info(
+            f"本番採用するには production_version.txt に '{version}' を書き込んでください: "
+            f"echo '{version}' > <MODEL_DIR>/production_version.txt"
+        )
+
     return model, auc
 
 

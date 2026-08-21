@@ -96,8 +96,11 @@ def predict(req: PredictRequest):
 @app.post("/result/register")
 def register_result(body: dict):
     """
-    レース結果を登録してモデルを自動再学習する
+    レース結果を登録する
     body: { race_id, results: [{horse_num, finish_pos}] }
+
+    再学習は月次バッチジョブ（jobs/monthly_train.sh）で行う。
+    API から自動的に再学習を起動しない（責務分離）。
     """
     import sqlite3
 
@@ -112,21 +115,7 @@ def register_result(body: dict):
     conn.commit()
     conn.close()
 
-    # 非同期で再学習をトリガー（本番ではCelery等を使う）
-    import threading
-    def retrain():
-        try:
-            sys.path.append(os.path.join(os.path.dirname(__file__), "..", "ml"))
-            from train import retrain_with_new_data
-            retrain_with_new_data()
-            logger.info("モデル再学習完了")
-        except Exception as e:
-            logger.error(f"再学習エラー: {e}")
-
-    t = threading.Thread(target=retrain, daemon=True)
-    t.start()
-
-    return {"status": "accepted", "message": "結果を登録しました。バックグラウンドで再学習を開始します。"}
+    return {"status": "accepted", "message": "結果を登録しました。再学習は月次ジョブで実行されます。"}
 
 
 if __name__ == "__main__":
